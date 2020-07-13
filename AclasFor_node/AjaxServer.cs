@@ -44,61 +44,75 @@ namespace AclasFor_node
                 // 接收新链接
                 // 这里会阻塞线程，每一次接收、处理一个链接后；while(true) 会回到这里继续等待
                 Socket socket = listener.AcceptSocket();
-                socket.SendTimeout = 1000 * 5; // 5 秒超时
 
-                // Console.WriteLine("Socket Type {0}", socket.SocketType);
-
-                if (socket.Connected)
-                {
-                    string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    Console.WriteLine("\n<< Client Connected! [{0}]", socket.RemoteEndPoint);
-                    
-                    try
-                    {
-                        byte[] receive = new byte[1024];
-                        // 浏览器发起请求，偶尔会卡死 20-07-13
-                        int total = socket.Receive(receive, receive.Length, SocketFlags.None);
-
-                        // 转成成字符串
-                        string buffer = Encoding.ASCII.GetString(receive);
-
-                        Console.WriteLine(buffer);
-
-                        // 只处理 GET 请求
-                        if (buffer.Substring(0, 3) != "GET")
-                        {
-                            Console.WriteLine("目前只处理 GIT 请求");
-                            socket.Close();
-                            continue;
-                        }
-                        // 过滤掉 favicon.ico
-                        string firstLine = buffer.Substring(0, buffer.IndexOf("\r\n"));
-                        if (Regex.IsMatch(firstLine, @"favicon\.ico"))
-                        {
-                            Console.WriteLine("过滤掉 favicon.ico");
-                            socket.Close();
-                            continue;
-                        }
-
-                        // 查找 HTTP 位置
-                        // int startPos = buffer.IndexOf("HTTP", 1);
-                        // string httpVersion = buffer.Substring(startPos, 8);
-
-                        SendToBrowser(
-                            ref socket,
-                            AssembleRes(now)
-                        );
-                    }
-                    catch (Exception e)
-                    {
-                        // 关闭当前链接客户端
-                        socket.Close();
-                        Console.WriteLine("[CATCH_ERROR] socket.Receive:\n{0}", e);
-                    }
-
-                }
+                //Thread thread = new Thread(new ThreadStart(() => HancelAcceptSocket(socket)));
+                Thread thread = new Thread(new ParameterizedThreadStart(HancelAcceptSocket));
+                thread.Start(socket);
             }
-            // listener.Stop(); // 主动关闭监听
+        }
+
+        // 处理 AcceptSocket
+        void HancelAcceptSocket(object args)
+        {
+            Socket socket = (Socket)args;
+            // socket.SendTimeout = 1000 * 5; // 5 秒超时
+
+            // Console.WriteLine("Socket Type {0}", socket.SocketType);
+
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Console.WriteLine("\n<< Client Connected! [{0}]", socket.RemoteEndPoint);
+
+            try
+            {
+                byte[] receive = new byte[1024];
+                int total = 0;
+                // 浏览器发起请求，偶尔会卡死 20-07-13(20-07-13晚；多线程解决)
+                while (true)
+                {
+                    int chunk = socket.Receive(receive, receive.Length, SocketFlags.None);
+                    total += chunk;
+                    if (chunk < 1024)
+                    {
+                        break;
+                    }
+                }
+
+                // 转成字符串
+                string buffer = Encoding.ASCII.GetString(receive);
+
+                // Console.WriteLine(buffer);
+
+                // 只处理 GET 请求
+                if (buffer.Substring(0, 3) != "GET")
+                {
+                    Console.WriteLine("目前只处理 GIT 请求");
+                    socket.Close();
+                    return;
+                }
+                // 过滤掉 favicon.ico
+                string firstLine = buffer.Substring(0, buffer.IndexOf("\r\n"));
+                if (Regex.IsMatch(firstLine, @"favicon\.ico"))
+                {
+                    Console.WriteLine("过滤掉 favicon.ico");
+                    socket.Close();
+                    return;
+                }
+
+                // 查找 HTTP 位置
+                // int startPos = buffer.IndexOf("HTTP", 1);
+                // string httpVersion = buffer.Substring(startPos, 8);
+
+                SendToBrowser(
+                    ref socket,
+                    AssembleRes(now)
+                );
+            }
+            catch (Exception e)
+            {
+                // 关闭当前链接客户端
+                socket.Close();
+                Console.WriteLine("[CATCH_ERROR] socket.Receive:\n{0}", e);
+            }
         }
 
         // 头部信息
