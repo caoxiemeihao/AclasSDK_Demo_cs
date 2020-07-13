@@ -9,6 +9,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Text.RegularExpressions;
 
+// 参考链接: http://blog.okbase.net/haobao/archive/60.html
+
 namespace AclasFor_node
 {
     class AjaxServer
@@ -30,7 +32,7 @@ namespace AclasFor_node
             }
             catch (Exception e)
             {
-                Console.WriteLine("CATCH_ERROR>> 启动 http 服务器失败: " + e);
+                Console.WriteLine("[CATCH_ERROR] 启动 http 服务器失败:\n{0}", e);
             }
         }
 
@@ -48,41 +50,50 @@ namespace AclasFor_node
 
                 if (socket.Connected)
                 {
+                    string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     Console.WriteLine("\n<< Client Connected! [{0}]", socket.RemoteEndPoint);
                     
                     try
                     {
                         byte[] receive = new byte[1024];
-                        int i = socket.Receive(receive, receive.Length, SocketFlags.None);
+                        // 浏览器发起请求，偶尔会卡死 20-07-13
+                        int total = socket.Receive(receive, receive.Length, SocketFlags.None);
 
                         // 转成成字符串
                         string buffer = Encoding.ASCII.GetString(receive);
+
+                        Console.WriteLine(buffer);
 
                         // 只处理 GET 请求
                         if (buffer.Substring(0, 3) != "GET")
                         {
                             Console.WriteLine("目前只处理 GIT 请求");
                             socket.Close();
-                            return;
+                            continue;
+                        }
+                        // 过滤掉 favicon.ico
+                        string firstLine = buffer.Substring(0, buffer.IndexOf("\r\n"));
+                        if (Regex.IsMatch(firstLine, @"favicon\.ico"))
+                        {
+                            Console.WriteLine("过滤掉 favicon.ico");
+                            socket.Close();
+                            continue;
                         }
 
                         // 查找 HTTP 位置
                         // int startPos = buffer.IndexOf("HTTP", 1);
                         // string httpVersion = buffer.Substring(startPos, 8);
-                    
+
                         SendToBrowser(
                             ref socket,
-                            AssembleRes(DateTime.Now.ToString("yyyy-MM-dd HH:MM:ss") + "0000")
+                            AssembleRes(now)
                         );
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("CATCH_ERROR>> socket.Receive: " + e);
-                    }
-                    finally
-                    {
                         // 关闭当前链接客户端
                         socket.Close();
+                        Console.WriteLine("[CATCH_ERROR] socket.Receive:\n{0}", e);
                     }
 
                 }
@@ -99,16 +110,18 @@ namespace AclasFor_node
         )
         {
             string header = httpVersion + " " + statusCode + "\r\n" // 状态行
-                // 报文首部
+                                                                    // 报文首部
                 + "Server: C#/Aclas" + "\r\n"
                 + "Content-Type: " + MIME + "\r\n"
                 + "Content-Length: " + totBytes + "\r\n"
-                + "Access-Control-Allow-Origin: *" + "\r\n"; // 跨域支持
+                + "Access-Control-Allow-Origin: *" + "\r\n" // 跨域支持
+                + "\r\n";                                   // 请求头和请求体之间的 空行
             return header;
         }
 
         void SendToBrowser(ref Socket socket, byte[] data)
         {
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             try
             {
                 int numBytes;
@@ -120,7 +133,7 @@ namespace AclasFor_node
                     }
                     else
                     {
-                        Console.WriteLine(">> No. of bytes send {0}", numBytes);
+                        Console.WriteLine(">> No. of bytes send {0}. [{1}]", numBytes, now);
                     }
                 }
                 else
@@ -130,17 +143,16 @@ namespace AclasFor_node
             }
             catch (Exception e)
             {
-                Console.WriteLine("CATCH_ERROR>> SendToBrowser 报错: {0}", e);
+                Console.WriteLine("[CATCH_ERROR] SendToBrowser 报错:\n{0}", e);
             }
         }
 
         // 发送数据
         public void SendToBrowser(ref Socket socket, string data)
         {
-            data = WithHeader(data.Length) // 请求头
-                + "\r\n"                   // 请求头和请求体之间的 空行
-                + data;                    // 请求体
+            SendToBrowser(ref socket, Encoding.ASCII.GetBytes(WithHeader(data.Length)));
             SendToBrowser(ref socket, Encoding.ASCII.GetBytes(data));
+            socket.Close();
         }
 
         // 拼装响应数据
