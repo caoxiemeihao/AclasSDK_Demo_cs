@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,11 +11,11 @@ namespace AclasFor_node
 {
     class ResponseAclas
     {
-        public UInt32 code;
-        public UInt32 index;
-        public UInt32 total;
+        public int code;
+        public int index;
+        public int total;
 
-        public ResponseAclas(UInt32 code, UInt32 index = 0, UInt32 total = 0)
+        public ResponseAclas(int code, int index = 0, int total = 0)
         {
             this.code = code;
             this.index = index;
@@ -190,7 +190,10 @@ namespace AclasFor_node
 
         public static void OnProgressEvent(UInt32 nErrorCode, UInt32 Index, UInt32 Total, IntPtr lpUserData)
         {
-            ResponseAclas res = new ResponseAclas(nErrorCode, Index, Total);
+            ResponseAclas res = new ResponseAclas(
+                Convert.ToInt32(nErrorCode),
+                Convert.ToInt32(Index),
+                Convert.ToInt32(Total));
 
             if (nErrorCode == ASSDK_Err_Success)
             {

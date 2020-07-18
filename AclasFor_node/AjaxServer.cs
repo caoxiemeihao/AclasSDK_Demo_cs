@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,12 +27,17 @@ namespace AclasFor_node
             this.code = code;
             this.msg = msg;
         }
+
+        public override string ToString()
+        {
+            return AjaxServer.AssembleRes(this);
+        }
     }
 
     class AjaxServer
     {
         private TcpListener listener;
-        private int port = 8009;
+        private int port = 9999;
         private FeedbackAjax @feedbackAjax;
 
         public void StartAjaxServer(FeedbackAjax @delegate)
@@ -78,7 +83,7 @@ namespace AclasFor_node
             // Console.WriteLine("Socket Type {0}", socket.SocketType);
 
             string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            Console.WriteLine("\n<< Client Connected! [{0}]", socket.RemoteEndPoint);
+            // Console.WriteLine("\n<< Client Connected! [{0}]", socket.RemoteEndPoint);
 
             try
             {
@@ -98,7 +103,7 @@ namespace AclasFor_node
                 // 转成字符串
                 string buffer = Encoding.ASCII.GetString(receive);
 
-                // Console.WriteLine(buffer);
+                Console.WriteLine("\n{0}", buffer.Substring(0, buffer.IndexOf("\r\n")));
 
                 // 只处理 GET 请求
                 if (buffer.Substring(0, 3) != "GET")
@@ -164,7 +169,9 @@ namespace AclasFor_node
                     }
                     else
                     {
-                        Console.WriteLine(">> No. of bytes send {0}. [{1}]", numBytes, now);
+                        // Console.WriteLine(">> No. of bytes send {0}. [{1}]", numBytes, now);
+                        string s = Encoding.ASCII.GetString(data);
+                        Console.WriteLine("----\n{0}\n", s.Substring(s.IndexOf("\r\n\r\n") + 4));
                     }
                 }
                 else
@@ -193,22 +200,49 @@ namespace AclasFor_node
         // 拼装响应数据
         public static string AssembleRes(ResponseAjax json)
         {
-            return "{code:" + json.code + ",\"data\":\"" + json.data + "\",\"msg\":\"" + json.msg + "\"}";
+            string data = new Regex(@"^(\{|\[\{)").IsMatch(json.data)
+                ? json.data
+                : "\"" + json.data + "\"";
+            return "{\"code\":" + json.code + ",\"data\":" + data + ",\"msg\":\"" + json.msg + "\"}"; ;
         }
 
         // 解析 Query String
         public Dictionary<string, string> QueryString2Dict(/*原始 http 字符串*/string httpRaw)
         {
-            string firstLine = Regex.Split(httpRaw, @"\r\n")[0];
+            //string firstLine = Regex.Split(httpRaw, @"\r\n")[0];
+            string firstLine = httpRaw.Substring(0, httpRaw.IndexOf("\r\n"));
             string qeuryString = Regex.Match(firstLine, @"(?<=\?).+(?=\sHTTP)").ToString();
             string[] tmpArr = qeuryString.Split('&');
             Dictionary<string, string> dict = new Dictionary<string ,string>();
             for (int x = 0; x < tmpArr.Length; x++)
             {
                 string[] tmp = tmpArr[x].Split('=');
-                dict.Add(tmp[0], tmp[1]);
+                if (tmp.Length > 1) dict.Add(tmp[0], tmp[1]);
             }
             return dict;
+        }
+
+        // 字典转 json 字符串
+        public static string Dict2JsonStr(Dictionary<string, object> dict, bool isNum)
+        {
+            string val = "";
+            foreach(KeyValuePair<string, object> item in dict)
+            {
+                if (isNum)
+                {
+                    val += "\"" + item.Key + "\":" + item.Value + ",";
+                } else
+                {
+
+                    val += "\"" + item.Key + "\":\"" + item.Value + "\",";
+                }
+            }
+            if (val.Length > 0)
+            {
+                val = val.Substring(0, val.Length - 1); // 去掉尾部的 ,
+            }
+
+            return "{" + val + "}";
         }
 
     }

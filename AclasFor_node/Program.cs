@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,19 +7,21 @@ using System.Net;
 
 using System.Runtime;
 using System.IO;
+using System.Threading;
 
 
 namespace AclasFor_node
 {
+    // Ajax 服务器回调
     internal delegate string FeedbackAjax(Dictionary<string, string> dict);
-
+    // 下发电子称回调
+    internal delegate void FeedbackAclas(CMD_ACLAS cmd, ResponseAclas res);
     enum CMD_ACLAS
     {
         下发中 = 1,
         成功 = 0,
         失败 = 3,
     }
-    internal delegate void FeedbackAclas(CMD_ACLAS cmd, ResponseAclas res);
     //exports.code_dict = {
     //  256: '已初始化',
     //  257: '未初始化',
@@ -51,26 +53,67 @@ namespace AclasFor_node
         {
             // TestReadIni();
             // TestHttpServer();
-            TestAjaxServer();
+            RunAjaxServer();
 
-            string host = "192.168.1.3";
-            uint dataType = 0x0000;
-            string deskTop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string fileName = Path.Combine(deskTop, "plu.txt");
-
-            // TestAclas(new AclasSDK_Args(host, dataType, fileName));
+            //string host = "192.168.1.3";
+            //uint dataType = 0x0000;
+            //string deskTop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            //string fileName = Path.Combine(deskTop, "plu.txt");
+            //RunAclas(new AclasSDK_Args(host, dataType, fileName));
         }
 
         static string FeedbackAjax(Dictionary<string, string> dict)
         {
-            Console.WriteLine("dict ---- {0}", dict);
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            return AjaxServer.AssembleRes(new ResponseAjax("Hahahah | " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
+            if (!dict.ContainsKey("cmd"))
+            {
+                return new ResponseAjax("", 1, "Parameter \"cmd\" is necessary.").ToString();
+            }
+
+            if (dict["cmd"] == "start") // 下发
+            {
+                if (State.processing) return new ResponseAjax("", 11, "The current task is not completed.").ToString();
+
+                string host = "";
+                uint dataType = 0x000;
+                string fileNmae = "";
+                if (dict.ContainsKey("host")) host = dict["host"];
+                if (dict.ContainsKey("file")) fileNmae = dict["file"];
+                if (host.Length == 0)
+                {
+                    return new ResponseAjax("", 1, "Parameter \"host\" is necessary.").ToString();
+                } else if (fileNmae.Length == 0)
+                {
+                    return new ResponseAjax("", 1, "Parameter \"file\" is necessary.").ToString();
+                }
+
+                // 启动下载线程
+                Thread thread = new Thread(new ParameterizedThreadStart(RunAclas));
+                thread.Start(new AclasSDK_Args(host, dataType, fileNmae));
+                State.resAclas = new ResponseAclas(-1, -1, -1);
+                State.processing = true;
+
+                return new ResponseAjax("", 0, "Start:" + host).ToString();
+            }
+            else if (dict["cmd"] == "state")
+            {
+                Dictionary<string, object> d = new Dictionary<string, object>();
+                //d["processing"] = State.processing ? "true" : "false";
+                d["code"] = State.resAclas.code;
+                d["index"] = State.resAclas.index;
+                d["total"] = State.resAclas.total;
+                return new ResponseAjax(AjaxServer.Dict2JsonStr(d, true)).ToString();
+            }
+
+            return new ResponseAjax(now, 0, "Not defined cmd:" + dict["cmd"]).ToString();
         }
 
         static void FeedbackAclas(CMD_ACLAS cmd, ResponseAclas res)
         {
-            Console.WriteLine("{0}|coder:{1}|{2}/{3}", cmd, res.code, res.index, res.total);
+            Console.WriteLine("[{0}:{1}] {2}/{3}", cmd, res.code, res.index, res.total);
+            State.resAclas = res;
+            State.processing = res.code == 1; // 1 正常进程
         }
 
         // 测试方法
@@ -81,21 +124,28 @@ namespace AclasFor_node
             string str = Helper.ReadString("host", "host", "host", initPath);
             Console.ReadKey();
         }
-
+        // 测试方法
         static void TestHttpServer() {
             TestHttpServer http = new TestHttpServer();
             http.StartServer();
         }
 
-        static void TestAjaxServer()
+        static void RunAjaxServer()
         {
             AjaxServer ajax = new AjaxServer();
             ajax.StartAjaxServer(new FeedbackAjax(FeedbackAjax));
         }
 
-        static void TestAclas(AclasSDK_Args args)
+        static void RunAclas(object args)
         {
-            Aclas.StartTask(new FeedbackAclas(FeedbackAclas), args);
+            Aclas.StartTask(new FeedbackAclas(FeedbackAclas), (AclasSDK_Args)args);
         }
+    }
+
+    // 中心数据
+    class State
+    {
+        public static ResponseAclas resAclas;
+        public static bool processing = false;
     }
 }
