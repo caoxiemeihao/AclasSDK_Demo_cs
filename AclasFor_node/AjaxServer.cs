@@ -9,17 +9,35 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Text.RegularExpressions;
 
-// 参考链接: http://blog.okbase.net/haobao/archive/60.html
+// 参考链接:
+// http://blog.okbase.net/haobao/archive/60.html
+// https://mp.weixin.qq.com/s/n0qfNsn9i2DCfRIRsWR0tw
 
 namespace AclasFor_node
 {
+    class ResponseAjax
+    {
+        public string data;
+        public int code;
+        public string msg;
+
+        public ResponseAjax(string data, int code = 0, string msg = "")
+        {
+            this.data = data;
+            this.code = code;
+            this.msg = msg;
+        }
+    }
+
     class AjaxServer
     {
         private TcpListener listener;
         private int port = 8009;
+        private FeedbackAjax @feedbackAjax;
 
-        public void StartAjaxServer()
+        public void StartAjaxServer(FeedbackAjax @delegate)
         {
+            @feedbackAjax = @delegate;
             try
             {
                 listener = new TcpListener(IPAddress.Any, port);
@@ -102,10 +120,9 @@ namespace AclasFor_node
                 // int startPos = buffer.IndexOf("HTTP", 1);
                 // string httpVersion = buffer.Substring(startPos, 8);
 
-                SendToBrowser(
-                    ref socket,
-                    AssembleRes(now)
-                );
+                // SendToBrowser(ref socket, AssembleRes(new ResponseAjax(now)));
+                SendToBrowser(ref socket, @feedbackAjax(QueryString2Dict(buffer)));
+                socket.Close();
             }
             catch (Exception e)
             {
@@ -164,19 +181,23 @@ namespace AclasFor_node
         // 发送数据
         public void SendToBrowser(ref Socket socket, string data)
         {
-            SendToBrowser(ref socket, Encoding.ASCII.GetBytes(WithHeader(data.Length)));
-            SendToBrowser(ref socket, Encoding.ASCII.GetBytes(data));
-            socket.Close();
+            //打包发
+            SendToBrowser(ref socket, Encoding.ASCII.GetBytes(WithHeader(data.Length) + data));
+
+            //分开发
+            //SendToBrowser(ref socket, Encoding.ASCII.GetBytes(WithHeader(data.Length)));
+            //SendToBrowser(ref socket, Encoding.ASCII.GetBytes(data));
+            //socket.Close();
         }
 
         // 拼装响应数据
-        public string AssembleRes(string data, int coed = 0, string msg = "")
+        public static string AssembleRes(ResponseAjax json)
         {
-            return "{code:" + coed + ",\"data\":\"" + data + "\",\"msg\":\"" + msg + "\"}";
+            return "{code:" + json.code + ",\"data\":\"" + json.data + "\",\"msg\":\"" + json.msg + "\"}";
         }
 
         // 解析 Query String
-        public Dictionary<string, string> QueryString2Dict(string httpRaw)
+        public Dictionary<string, string> QueryString2Dict(/*原始 http 字符串*/string httpRaw)
         {
             string firstLine = Regex.Split(httpRaw, @"\r\n")[0];
             string qeuryString = Regex.Match(firstLine, @"(?<=\?).+(?=\sHTTP)").ToString();
