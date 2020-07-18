@@ -9,22 +9,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AclasFor_node", "AclasFor_n
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Debug|x86.ActiveCfg = Debug|x86
 		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Debug|x86.Build.0 = Debug|x86
-		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Release|Any CPU.ActiveCfg = Release|x86
 		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Release|x86.ActiveCfg = Release|x86
 		{6CC8A837-FE38-492B-BD78-CF1C25B5441F}.Release|x86.Build.0 = Release|x86
-		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Debug|x86.ActiveCfg = Debug|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Debug|x86.Build.0 = Debug|x86
-		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Release|Any CPU.ActiveCfg = Release|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Release|x86.ActiveCfg = Release|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
