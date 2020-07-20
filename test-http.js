@@ -3,7 +3,6 @@ const utils = require('util');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const { resolve } = require('path');
 
 function query(params) {
   return new Promise(resolve => {
@@ -27,11 +26,8 @@ function query(params) {
 }
 
 function state(cb) {
-  query({
+  return query({
     cmd: 'state',
-  }).then(json => {
-    cb(json);
-    // console.log(json);
   });
 }
 
@@ -43,17 +39,19 @@ function start() {
   }).then(json => {
     if (json.code === 0) {
       const t = setInterval(() => {
-        state(j => {
-          const { data } = j;
-          console.log(data);
-          if (data.code === 0) {
+        query({ cmd: 'state' }).then(json => {
+          if (json.data.code === 0) {
             clearTimeout(t);
-            console.log(完成);
-          } else if (data.code > 1) {
+            console.log('完成');
+          } else if (json.data.code === 1) { // 进行中
+            console.log(json.data);
+          } else if (json.data.code === -1) { // 准备中
+            console.log(json.data);
+          } else { // 报错
             clearTimeout(t);
-            console.log('报错');
+            console.log(json);
           }
-        })
+        });
       }, 400);
     };
   });

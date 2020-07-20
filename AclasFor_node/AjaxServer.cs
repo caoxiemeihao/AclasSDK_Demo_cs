@@ -39,6 +39,7 @@ namespace AclasFor_node
         private TcpListener listener;
         private int port = 9999;
         private FeedbackAjax @feedbackAjax;
+        private Dictionary<string, string> serverDict = new Dictionary<string, string>();
 
         public void StartAjaxServer(FeedbackAjax @delegate)
         {
@@ -48,14 +49,20 @@ namespace AclasFor_node
                 listener = new TcpListener(IPAddress.Any, port);
                 listener.Start();
 
-                Console.WriteLine("Ajax Server Running at {0}\nPress ^C to Stop.", port);
+                //Console.WriteLine("Ajax Server Running at {0}\nPress ^C to Stop.", port); di
+                serverDict["state"] = "start";
+                serverDict["port"] = port.ToString();
+                Program.StdoutToNodeJs("server", Dict2JsonStr(serverDict));
 
                 Thread thread = new Thread(new ThreadStart(StartListen));
                 thread.Start();
             }
             catch (Exception e)
             {
-                Console.WriteLine("[CATCH_ERROR] 启动 http 服务器失败:\n{0}", e);
+                //Console.WriteLine("[CATCH_ERROR] 启动 http 服务器失败:\n{0}", e);
+                serverDict["state"] = "error";
+                serverDict["error"] = e.ToString();
+                Program.StdoutToNodeJs("server", Dict2JsonStr(serverDict));
             }
         }
 
@@ -87,28 +94,26 @@ namespace AclasFor_node
 
             try
             {
-                byte[] receive = new byte[1024];
-                int total = 0;
+                // 假定数据不会超过 2KB(只接受GT)
+                byte[] receive = new byte[1024 * 2];
                 // 浏览器发起请求，偶尔会卡死 20-07-13(20-07-13晚；多线程解决)
-                while (true)
-                {
-                    int chunk = socket.Receive(receive, receive.Length, SocketFlags.None);
-                    total += chunk;
-                    if (chunk < 1024)
-                    {
-                        break;
-                    }
-                }
+                int chunk = socket.Receive(receive, receive.Length, SocketFlags.None);
 
                 // 转成字符串
                 string buffer = Encoding.ASCII.GetString(receive);
 
-                Console.WriteLine("\n{0}", buffer.Substring(0, buffer.IndexOf("\r\n")));
+                //Console.WriteLine("\n{0}", buffer.Substring(0, buffer.IndexOf("\r\n")));
+                serverDict["state"] = "alive";
+                serverDict["header"] = buffer.Substring(0, buffer.IndexOf("\r\n"));
+                Program.StdoutToNodeJs("server", Dict2JsonStr(serverDict));
 
                 // 只处理 GET 请求
                 if (buffer.Substring(0, 3) != "GET")
                 {
-                    Console.WriteLine("目前只处理 GIT 请求");
+                    //Console.WriteLine("目前只处理 GIT 请求");
+                    serverDict["state"] = "error";
+                    serverDict["error"] = "目前只处理 GIT 请求";
+                    Program.StdoutToNodeJs("server", Dict2JsonStr(serverDict));
                     socket.Close();
                     return;
                 }
@@ -116,7 +121,7 @@ namespace AclasFor_node
                 string firstLine = buffer.Substring(0, buffer.IndexOf("\r\n"));
                 if (Regex.IsMatch(firstLine, @"favicon\.ico"))
                 {
-                    Console.WriteLine("过滤掉 favicon.ico");
+                    //Console.WriteLine("过滤掉 favicon.ico");
                     socket.Close();
                     return;
                 }
@@ -133,7 +138,10 @@ namespace AclasFor_node
             {
                 // 关闭当前链接客户端
                 socket.Close();
-                Console.WriteLine("[CATCH_ERROR] socket.Receive:\n{0}", e);
+                //Console.WriteLine("[CATCH_ERROR] socket.Receive:\n{0}", e);
+                serverDict["state"] = "error";
+                serverDict["error"] = "[CATCH_ERROR] socket.Receive:\n{0}";
+                Program.StdoutToNodeJs("server", Dict2JsonStr(serverDict));
             }
         }
 
@@ -165,23 +173,23 @@ namespace AclasFor_node
                 {
                     numBytes = socket.Send(data, data.Length, SocketFlags.None);
                     if (numBytes == -1) {
-                        Console.WriteLine("Socket Error cannot Send Packet.");
+                        //Console.WriteLine("Socket Error cannot Send Packet.");
                     }
                     else
                     {
                         // Console.WriteLine(">> No. of bytes send {0}. [{1}]", numBytes, now);
                         string s = Encoding.ASCII.GetString(data);
-                        Console.WriteLine("----\n{0}\n", s.Substring(s.IndexOf("\r\n\r\n") + 4));
+                        //Console.WriteLine("----\n{0}\n", s.Substring(s.IndexOf("\r\n\r\n") + 4));
                     }
                 }
                 else
                 {
-                    Console.WriteLine("socket.Connected: false");
+                    //Console.WriteLine("socket.Connected: false");
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("[CATCH_ERROR] SendToBrowser 报错:\n{0}", e);
+                //Console.WriteLine("[CATCH_ERROR] SendToBrowser 报错:\n{0}", e);
             }
         }
 
@@ -217,18 +225,24 @@ namespace AclasFor_node
             for (int x = 0; x < tmpArr.Length; x++)
             {
                 string[] tmp = tmpArr[x].Split('=');
-                if (tmp.Length > 1) dict.Add(tmp[0], tmp[1]);
+                if (tmp.Length > 1) {
+                    // UrlDecode
+                    tmp[1] = Uri.UnescapeDataString(tmp[1]);
+                    dict.Add(tmp[0], tmp[1]);
+                };
             }
             return dict;
         }
 
         // 字典转 json 字符串
-        public static string Dict2JsonStr(Dictionary<string, object> dict, bool isNum)
+        public static string Dict2JsonStr(Dictionary<string, string> dict)
         {
             string val = "";
-            foreach(KeyValuePair<string, object> item in dict)
+            foreach(KeyValuePair<string, string> item in dict)
             {
-                if (isNum)
+                bool isNumber = new Regex(@"^-?\d+$").IsMatch(item.Value);
+                bool isBool = new Regex(@"^(true|false)$").IsMatch(item.Value);
+                if (isNumber || isBool)
                 {
                     val += "\"" + item.Key + "\":" + item.Value + ",";
                 } else

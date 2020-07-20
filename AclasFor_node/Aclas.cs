@@ -230,9 +230,8 @@ namespace AclasFor_node
             // 链接不上 bInfo = False；剩的去 ping 了
             // 链接超时时间、重试次数在 AclasSDK.ini 中配置
             // GetDeviceTimeOut=2000 + GetDeviceTryCount=2 --> 10 秒超时时间
-            bool bInfo = AclasSDK_GetDevicesInfo(iAddr, 0, ASSDK_ProtocolType_None, ref DeviceInfo);
-            @feedbackAclas(CMD_ACLAS.失败, new ResponseAclas(501));
-            if (bInfo)
+            bool boolInfo = AclasSDK_GetDevicesInfo(iAddr, 0, ASSDK_ProtocolType_None, ref DeviceInfo);
+            if (boolInfo)
             {
                 TASSDKOnProgressEvent OnProgress = new TASSDKOnProgressEvent(OnProgressEvent);
 
@@ -240,6 +239,10 @@ namespace AclasFor_node
 
                 // 执行结束，直接释放
                 AclasSDK_Finalize();
+            }
+            else
+            {
+                @feedbackAclas(CMD_ACLAS.失败, new ResponseAclas(501));
             }
 
         }
