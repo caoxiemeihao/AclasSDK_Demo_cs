@@ -69,7 +69,7 @@ namespace AclasFor_node
 
                 return new ResponseAjax("", 0, "Start:" + host).ToString();
             }
-            else if (dict["cmd"] == "state")
+            else if (dict["cmd"] == "state") // 获取当前状态
             {
                 return new ResponseAjax(State.ToJsonStr()).ToString();
             }
