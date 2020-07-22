@@ -21,6 +21,8 @@ namespace AclasFor_node
     {
         static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
+                
             // TestReadIni();
             // TestHttpServer();
             RunAjaxServer();
