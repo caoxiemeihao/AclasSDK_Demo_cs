@@ -37,7 +37,7 @@ namespace AclasFor_node
     class AjaxServer
     {
         private TcpListener listener;
-        private int port = 9999;
+        private int port = 9497; // 9999 被 WXWork.exe 占用 😥
         private FeedbackAjax @feedbackAjax;
         private Dictionary<string, string> serverDict = new Dictionary<string, string>();
 
