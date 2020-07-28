@@ -35,7 +35,8 @@ function start() {
   query({
     cmd: 'start',
     host: '192.168.1.3',
-    file: path.join(os.homedir(), 'Desktop/plu.txt'),
+    // file: path.join(os.homedir(), 'Desktop/plu.txt'),
+    file: path.join(__dirname, './plu.txt'),
   }).then(json => {
     if (json.code === 0) {
       const t = setInterval(() => {

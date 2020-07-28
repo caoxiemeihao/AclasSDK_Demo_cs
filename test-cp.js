@@ -49,7 +49,8 @@ handle.stdout.on('data', function (chunk) {
         query({
           cmd: 'start',
           host: '192.168.1.3',
-          file: path.join(os.homedir(), 'Desktop/plu.txt'),
+          // file: path.join(os.homedir(), 'Desktop/plu.txt'),
+          file: path.join(__dirname, './plu.txt'),
         }, json.port).then(json => {
           console.log('[Query response]', json);
         });
