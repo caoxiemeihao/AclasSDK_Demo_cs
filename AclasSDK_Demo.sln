@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AclasSDK_Demo", "AclasSDK_D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AclasFor_node", "AclasFor_node\AclasFor_node.csproj", "{EFEB298F-D690-4915-A893-ECEFFBB91D4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AclasFor_node_SingleFile", "AclasFor_node_SingleFile\AclasFor_node_SingleFile.csproj", "{FE210414-05FE-4712-81C7-4ECB1B11C944}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -21,6 +23,10 @@ Global
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Debug|x86.Build.0 = Debug|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Release|x86.ActiveCfg = Release|x86
 		{EFEB298F-D690-4915-A893-ECEFFBB91D4D}.Release|x86.Build.0 = Release|x86
+		{FE210414-05FE-4712-81C7-4ECB1B11C944}.Debug|x86.ActiveCfg = Debug|x86
+		{FE210414-05FE-4712-81C7-4ECB1B11C944}.Debug|x86.Build.0 = Debug|x86
+		{FE210414-05FE-4712-81C7-4ECB1B11C944}.Release|x86.ActiveCfg = Release|x86
+		{FE210414-05FE-4712-81C7-4ECB1B11C944}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
