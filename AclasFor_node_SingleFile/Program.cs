@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace AclasFor_node_SingleFile
 {
@@ -24,11 +25,16 @@ namespace AclasFor_node_SingleFile
                 return;
             }
 
-            Aclas.StartTask(new AclasSDK_Args(
+            AclasSDK_Args aclasArgs = new AclasSDK_Args(
                 dict["host"],
                 Convert.ToUInt32(dict["type"]),
-                dict["filename"]));
+                dict["filename"]);
 
+            // Aclas.StartTask(aclasArgs); // 20-07-29
+            // 如果直接运行；在 electron 主进程中下发到 45 条后直接退出，还不报错！
+            // 放在单独线程中运行即可解决 45 条意外退出问题
+            Thread thread = new Thread(new ParameterizedThreadStart(Aclas.StartTask));
+            thread.Start(aclasArgs);
         }
 
     }
@@ -324,8 +330,9 @@ namespace AclasFor_node_SingleFile
             }
         }
 
-        public static void StartTask(AclasSDK_Args args)
+        public static void StartTask(object param)
         {
+            AclasSDK_Args args = (AclasSDK_Args)param;
             AclasSDK_Initialize(null);
 
             uint iAddr = MakeHostToDWord(args.host);
