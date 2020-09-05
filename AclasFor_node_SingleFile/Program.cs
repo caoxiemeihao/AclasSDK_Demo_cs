@@ -12,23 +12,30 @@ namespace AclasFor_node_SingleFile
 {
     class Program
     {
+        public static Dictionary<string, string> MainArgs;
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Dictionary<string, string> dict = Utils.QueryString2Dict(args[0]);
-
-            if (!dict.ContainsKey("host") || !dict.ContainsKey("filename") || !dict.ContainsKey("type"))
+            if (args.Length == 0)
             {
-                Utils.StdoutToNodeJs("error", new StateMsg(11, null,
+                Utils.StdoutToNodeJs("error", new StateMsg(11, null, "入参错误: string[] args 不能为空"));
+                return;
+            }
+
+            MainArgs = Utils.QueryString2Dict(args[0]);
+
+            if (!MainArgs.ContainsKey("host") || !MainArgs.ContainsKey("filename") || !MainArgs.ContainsKey("type"))
+            {
+                Utils.StdoutToNodeJs("error", new StateMsg(12, null,
                     "入参错误: [host, filename, type] 必须传入！\n传入参数: " + args[0]));
                 return;
             }
 
             AclasSDK_Args aclasArgs = new AclasSDK_Args(
-                dict["host"],
-                Convert.ToUInt32(dict["type"]),
-                dict["filename"]);
+                MainArgs["host"],
+                Convert.ToUInt32(MainArgs["type"]),
+                MainArgs["filename"]);
 
             // Aclas.StartTask(aclasArgs); // 20-07-29
             // 如果直接运行；在 electron 主进程中下发到 45 条后直接退出，还不报错！
@@ -58,6 +65,7 @@ namespace AclasFor_node_SingleFile
             dict["code"] = code.ToString();
             dict["data"] = data;
             dict["msg"] = msg;
+            if (Program.MainArgs.ContainsKey("extra")) dict["extra"] = Program.MainArgs["extra"];
             return Utils.Dict2JsonStr(dict);
         }
     }
@@ -134,6 +142,7 @@ namespace AclasFor_node_SingleFile
             dict["code"] = code.ToString();
             dict["index"] = index.ToString();
             dict["total"] = total.ToString();
+            if (Program.MainArgs.ContainsKey("extra"))  dict["extra"] = Program.MainArgs["extra"];
             return Utils.Dict2JsonStr(dict);
         }
     }
