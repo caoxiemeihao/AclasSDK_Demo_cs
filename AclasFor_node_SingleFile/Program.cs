@@ -142,7 +142,7 @@ namespace AclasFor_node_SingleFile
             dict["code"] = code.ToString();
             dict["index"] = index.ToString();
             dict["total"] = total.ToString();
-            if (Program.MainArgs.ContainsKey("extra"))  dict["extra"] = Program.MainArgs["extra"];
+            if (Program.MainArgs.ContainsKey("extra")) dict["extra"] = Program.MainArgs["extra"];
             return Utils.Dict2JsonStr(dict);
         }
     }
