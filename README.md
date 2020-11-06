@@ -84,3 +84,8 @@ $ node test-single.js
    由于 Exception.ToString() 失败，因此无法打印异常字符串。
   ```
 - `AclasSDK.dll` 貌似是 `Debug` 版本的；所以程序也要编译成 `Debug` 版本
+- 官方回答
+  ```
+  demo里的 AclasSDK.dll 也是release版的
+  可以改成release试
+  ```
