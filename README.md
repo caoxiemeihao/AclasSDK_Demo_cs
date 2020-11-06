@@ -75,3 +75,12 @@ $ node test-single.js
   { cmd: 'dispatch', json: { code: 0, index: 50, total: 50 } }
 ]
 ```
+
+## 20-11-06 踩坑
+
+- 报错
+  ```bash
+  
+   由于 Exception.ToString() 失败，因此无法打印异常字符串。
+  ```
+- `AclasSDK.dll` 貌似是 `Debug` 版本的；所以程序也要编译成 `Debug` 版本
