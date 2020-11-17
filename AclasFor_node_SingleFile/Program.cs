@@ -165,7 +165,7 @@ namespace AclasFor_node_SingleFile
     {
         const string DISPATCH_CMD = "dispatch";
 
-        const string LibraryName = "AclasSDK.dll";
+        const string LibraryName = "Win32/AclasSDK.dll";
         // Success
         const int ASSDK_Err_Success = 0x0000;
         // Progress
